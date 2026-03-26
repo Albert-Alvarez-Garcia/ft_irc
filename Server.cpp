@@ -54,6 +54,8 @@ void Server::run() {
     v_server_fd.revents = 0;
     _fds.push_back(v_server_fd);
 
+    //quitamos este poll por la necesidad de un 'unico poll en el proyecto a pesar de ser este de seguridad por si no se entra en el bucle
+
     /*
     int poll_count = poll(&_fds[0], _fds.size(), 1000); 
     
@@ -63,7 +65,7 @@ void Server::run() {
     }
 */
     while (true) {
-        // Usamos &_fds[0] (o _fds.data() en C++11) para pasar el puntero al array interno
+        // Usamos &_fds[0] para pasar el puntero al array interno
         if (poll(&_fds[0], _fds.size(), -1) == -1) {
             // Si el servidor se cierra por una señal, evitamos el throw
             break; 
@@ -143,7 +145,7 @@ void Server::processBuffer(Client* client, size_t &i) {
     size_t pos;
     int currentFd = _fds[i].fd; // Guardamos el FD para verificar vida
 
-    // --- BLOQUE DEBUGGER (Opcional, déjalo si quieres ver qué entra) ---
+    // --- BLOQUE DEBUGGER  ---
     if (!clientBuf.empty()) {
         std::cout << "[DEBUG] Recibido de " << client->getNickname() << ": [";
         for (size_t j = 0; j < clientBuf.size(); j++) {
@@ -218,7 +220,7 @@ void Server::executeCommand(Client* client, std::string message, size_t &i) {
     // Con la limpieza anterior, aquí entrará aunque hayas puesto un espacio por error
     
     if (cmd == "CAP") {
-    // No hacemos nada. Ignoramos el mensaje para que no salte el "Unknown Command"
+    // No hacemos nada. Ignoramos el mensaje de otros irc para que no salte el "Unknown Command"
     return; 
     }
     if (cmd == "QUIT") {
@@ -303,6 +305,9 @@ void Server::sendWelcome(Client* client) {
     sendResponse(client, ":ircserv 372 " + client->getNickname() + " :    |_||_____| \n");
     sendResponse(client, ":ircserv 376 " + client->getNickname() + " :End of /MOTD command.\n");
 }
+
+
+
 
 void Server::handleUser(Client* client, std::string message) {
     (void)message;
