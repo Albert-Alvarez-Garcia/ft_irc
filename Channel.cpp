@@ -10,10 +10,20 @@ Channel::~Channel() {}
 std::string Channel::getName() const { return _name; }
 
 void Channel::addMember(Client* client) {
+    // 1. Verificamos si el puntero del cliente ya existe en el vector
+    for (size_t i = 0; i < _members.size(); i++) {
+        if (_members[i] == client) {
+            return; // Ya es miembro, no hacemos nada y salimos
+        }
+    }
+
+    // 2. Si llegamos aquí, es que no estaba. Lo añadimos.
     _members.push_back(client);
-    // Si es el primer miembro, lo hacemos admin automáticamente
-    if (_members.size() == 1)
+
+    // 3. Asignamos admin si es el primero (esta lógica sigue igual)
+    if (_members.size() == 1) {
         _admin = client;
+    }
 }
 
 const std::vector<Client*>& Channel::getMembers() const { return _members; }

@@ -1,0 +1,30 @@
+#!/bin/bash
+# Script de Layout Profesional (Ajuste Fino)
+
+# --- CONFIGURACIÓN ---
+# Reducimos el alto (10 filas de texto) para separarlas verticalmente
+SIZE="75x10"
+
+# Coordenadas (X, Y) para cada ventana.
+# He reducido el X para juntar las columnas y aumentado el Y de la fila 2.
+POS[1]="+0+0"      # Fila 1 - Izquierda
+POS[2]="+630+0"    # Fila 1 - Centro
+POS[3]="+1260+0"   # Fila 1 - Derecha
+
+POS[4]="+0+450"    # Fila 2 - Izquierda
+POS[5]="+630+450"  # Fila 2 - Centro
+
+# Asegúrate de usar la variable 'i' para que no se repitan los nicks
+for i in {1..5}
+do
+    gnome-terminal --geometry="${SIZE}${POS[$i]}" --title="BERTO_$i" -- bash -c "{ 
+        echo 'PASS pass'; 
+        sleep 0.5; 
+        echo 'NICK BERTO_$i'; # ¡Aquí estaba el error de repetición!
+        sleep 0.5; 
+        echo 'USER berto$i 0 * :Bot$i'; 
+        sleep 0.5; 
+        echo 'JOIN #42'; 
+        cat; 
+    } | nc 127.0.0.1 6667" &
+done

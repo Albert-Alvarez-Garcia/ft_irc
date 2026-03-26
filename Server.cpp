@@ -112,15 +112,30 @@ void Server::acceptNewConnection() {
 
 void Server::handleClientData(size_t &i) {
     char buffer[1024];
+    // 1. Limpieza total del buffer
     std::memset(buffer, 0, sizeof(buffer));
+    
     ssize_t bytesRead = recv(_fds[i].fd, buffer, sizeof(buffer) - 1, 0);
 
-    Client* client = _clients[_fds[i].fd];
-    if (bytesRead <= 0) disconnectClient(i);
-    else {
-        client->addToBuffer(std::string(buffer));
-        processBuffer(client, i);
+    // 2. Control estricto de desconexión
+    if (bytesRead <= 0) {
+        std::cout << "[LOG] Cliente en FD " << _fds[i].fd << " desconectado." << std::endl;
+        disconnectClient(i); 
+        // Importante: disconnectClient debe restar 1 a 'i' si borras el elemento del vector
+        // para que el bucle del main no se salte al siguiente cliente.
+        return;
     }
+
+    // 3. Obtener el cliente de forma segura
+    if (_clients.find(_fds[i].fd) == _clients.end()) return;
+    Client* client = _clients[_fds[i].fd];
+
+    // 4. Añadir solo los bytes leídos (evita leer basura de la RAM)
+    std::string dataReceived(buffer, bytesRead);
+    client->addToBuffer(dataReceived);
+
+    // 5. Procesar
+    processBuffer(client, i);
 }
 
 void Server::processBuffer(Client* client, size_t &i) {
@@ -306,6 +321,7 @@ void Server::handleUser(Client* client, std::string message) {
 
 // --- COMANDOS OPERATIVOS ---
 
+/*
 void Server::handleJoin(Client* client, std::string message) {
     std::stringstream ss(message);
     std::string cmd, cName, providedKey;
@@ -368,6 +384,83 @@ void Server::handleJoin(Client* client, std::string message) {
     sendResponse(client, ":ircserv 353 " + client->getNickname() + " = " + cName + " :" + chan->getNamesList() + "\n");
     sendResponse(client, ":ircserv 366 " + client->getNickname() + " " + cName + " :End of /NAMES list\n");
 }
+*/
+
+
+
+void Server::handleJoin(Client* client, std::string message) {
+    std::stringstream ss(message);
+    std::string cmd, cName, providedKey;
+    
+    ss >> cmd >> cName >> providedKey;
+
+    // 1. Validación de parámetros básicos
+    if (cName.empty()) {
+        sendResponse(client, ":ircserv 461 " + client->getNickname() + " JOIN :Not enough parameters\n");
+        return;
+    }
+
+    // 2. Comprobar existencia y si ya es miembro (Anti-duplicados)
+    bool exists = (_channels.find(cName) != _channels.end());
+    
+    if (exists && _channels[cName]->isMember(client)) {
+        // Ya está dentro, no hacemos nada para evitar el broadcast repetido
+        return; 
+    }
+
+    // 3. Lógica de creación o filtros de entrada
+    if (!exists) {
+        // ESCENARIO A: Canal Nuevo (Entrada libre como Admin)
+        _channels[cName] = new Channel(cName);
+        _channels[cName]->setAdmin(client);
+    } 
+    else {
+        // ESCENARIO B: Canal Existente (Aplicar filtros de MODOS)
+        Channel* chan = _channels[cName];
+
+        // Filtro Invite Only (+i)
+        if (chan->isInviteOnly() && !chan->isInvited(client->getNickname())) {
+            sendResponse(client, ":ircserv 473 " + client->getNickname() + " " + cName + " :Cannot join channel (+i)\n");
+            return;
+        }
+
+        // Filtro Límite de usuarios (+l)
+        if (chan->isFull()) {
+            sendResponse(client, ":ircserv 471 " + client->getNickname() + " " + cName + " :Cannot join channel (+l)\n");
+            return;
+        }
+
+        // Filtro Contraseña (+k)
+        if (!chan->getKey().empty() && providedKey != chan->getKey()) {
+            sendResponse(client, ":ircserv 475 " + client->getNickname() + " " + cName + " :Cannot join channel (+k)\n");
+            return;
+        }
+    }
+
+    // 4. Proceso de unión exitosa
+    Channel* chan = _channels[cName];
+    chan->addMember(client);
+    
+    // Si entró por invitación, la limpiamos
+    if (chan->isInvited(client->getNickname())) {
+        chan->removeGuest(client->getNickname());
+    }
+
+    // 5. Notificaciones y protocolo de bienvenida al canal
+    // Anunciamos a todos (incluido el nuevo) que alguien ha entrado
+    chan->broadcast(":" + client->getNickname() + " JOIN " + cName + "\n", NULL);
+    
+    // Mandamos el TOPIC si existe (RPL_TOPIC 332)
+    if (!chan->getTopic().empty())
+        sendResponse(client, ":ircserv 332 " + client->getNickname() + " " + cName + " :" + chan->getTopic() + "\n");
+
+    // Mandamos la lista de usuarios (RPL_NAMREPLY 353)
+    sendResponse(client, ":ircserv 353 " + client->getNickname() + " = " + cName + " :" + chan->getNamesList() + "\n");
+    
+    // Fin de la lista (RPL_ENDOFNAMES 366)
+    sendResponse(client, ":ircserv 366 " + client->getNickname() + " " + cName + " :End of /NAMES list\n");
+}
+
 
 void Server::handlePrivmsg(Client* client, std::string message) {
     std::stringstream ss(message);
