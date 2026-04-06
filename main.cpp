@@ -4,12 +4,12 @@
 #include <stdlib.h>
 #include <string>
 #include <limits>
-#include <cctype> // Para isdigit e isspace
+#include <cctype> // isdigit e isspace
 
-// Variable global para que la señal pueda detener el bucle
+// Global variable to allow the signal handler to stop the main loop
 bool server_stop = false;
 
-// Manejador de la señal Ctrl+C
+// Signal handler for Ctrl+C (SIGINT)
 void signalHandler(int signum) {
     (void)signum;
     std::cout << "\n[!] Deteniendo el servidor de forma segura..." << std::endl;
@@ -17,7 +17,7 @@ void signalHandler(int signum) {
 }
 
 /**
- * Función auxiliar para validar si una cadena es un número positivo
+ * Helper function to validate if a string represents a positive number
  */
 bool isValidPort(const std::string& str) {
     if (str.empty()) return false;
@@ -28,7 +28,7 @@ bool isValidPort(const std::string& str) {
 }
 
 /**
- * Función auxiliar para validar que el password no sea solo espacios
+ * Helper function to validate that the password is not only spaces
  */
 bool isOnlySpaces(const std::string& str) {
     if (str.empty()) return true;
@@ -39,31 +39,31 @@ bool isOnlySpaces(const std::string& str) {
 }
 
 int main(int argc, char **argv) {
-    // 1. Validar número de argumentos
+    // 1. Validate number of arguments
     if (argc != 3) {
-        std::cerr << "Uso: ./ircserv <puerto> <password>" << std::endl;
+        std::cerr << "Uso: ./ircserv <port> <password>" << std::endl;
         return 1;
     }
 
-    // 2. Validar puerto (solo dígitos)
+    // 2. Validate port (digits only)
     std::string portStr = argv[1];
     if (!isValidPort(portStr)) {
-        std::cerr << "Error: El puerto '" << portStr << "' no es un número válido." << std::endl;
+        std::cerr << "Error: Port '" << portStr << "' is not a valid number." << std::endl;
         return 1;
     }
 
-    // 3. Validar rango del puerto (1024 - 65535)
+    // 3. Validate port range (1024 - 65535)
     long portCheck = atol(argv[1]);
     if (portCheck < 1024 || portCheck > 65535) {
-        std::cerr << "Error: Puerto fuera de rango. Usa uno entre 1024 y 65535." << std::endl;
+        std::cerr << "Error: Port out of range. Use a value between 1024 and 65535." << std::endl;
         return 1;
     }
     int port = static_cast<int>(portCheck);
 
-    // 4. Validar password (que no esté vacío ni sean solo espacios)
+    // 4. Validate password (must not be empty or contain only spaces)
     std::string password = argv[2];
     if (isOnlySpaces(password)) {
-        std::cerr << "Error: El password no puede estar vacío o contener solo espacios." << std::endl;
+        std::cerr << "Error: Password cannot be empty or consist only of spaces." << std::endl;
         return 1;
     }
 
@@ -74,20 +74,20 @@ int main(int argc, char **argv) {
         Server irc(port, password);
         irc.init();
 
-        std::cout << "--- SERVIDOR IRC 42 INICIADO ---" << std::endl;
-        std::cout << "Puerto: " << port << " | Pass: [" << password << "]" << std::endl;
-        std::cout << "Presiona Ctrl+C para salir limpiamente." << std::endl;
+        std::cout << "--- 42 IRC SERVER STARTED ---" << std::endl;
+        std::cout << "Port: " << port << " | Password: [" << password << "]" << std::endl;
+        std::cout << "Press Ctrl+C to exit cleanly." << std::endl;
 
-        // Bucle principal controlado por la señal
+        // Main loop controlled by the signal
         while (!server_stop) {
             irc.run(); 
         }
 
     } catch (const std::exception &e) {
-        std::cerr << "Error crítico: " << e.what() << std::endl;
+        std::cerr << "Critical Error: " << e.what() << std::endl;
         return 1;
     }
 
-    std::cout << "Servidor cerrado. ¡Buen trabajo en la evaluación!" << std::endl;
+    std::cout << "Server closed." << std::endl;
     return 0;
 }
