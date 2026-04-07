@@ -77,7 +77,7 @@ void Server::run() {
                     acceptNewConnection();
                 } else {
                     // Guardamos el FD actual para comparar después
-                    int fd_antes = _fds[i].fd;
+                    int old_fd = _fds[i].fd;
                     
                     handleClientData(i);
 
@@ -85,7 +85,7 @@ void Server::run() {
                     // Si el cliente se desconectó en handleClientData (QUIT), 
                     // el vector _fds ha encogido y los elementos se han desplazado.
                     // Verificamos si el elemento en la posición 'i' ya no es el mismo.
-                    if (i < _fds.size() && _fds[i].fd != fd_antes) {
+                    if (i < _fds.size() && _fds[i].fd != old_fd) {
                         i--; // Retrocedemos el índice para no saltarnos al siguiente cliente
                     } else if (i >= _fds.size()) {
                         // Si era el último elemento y se borró, salimos del for

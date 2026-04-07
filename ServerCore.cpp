@@ -85,14 +85,14 @@ void Server::run()
                 else 
                 {
                     // Store current file descriptor for later comparison
-                    int fd_antes = _fds[i].fd;
+                    int old_fd = _fds[i].fd;
                     
                     handleClientData(i);
 
                     // --- CRITICAL BUGFIX ---
                     // Handle cases where handleClientData removes a client, causing the _fds vector
                     // to resize and shift. Verify if the current index 'i' still points to the same FD.
-                    if (i < _fds.size() && _fds[i].fd != fd_antes) 
+                    if (i < _fds.size() && _fds[i].fd != old_fd) 
                     {
                         // Adjust index to prevent skipping the next element
                         i--; 
