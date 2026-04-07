@@ -17,12 +17,12 @@ POS[6]="+1000+480" # aBAJO DERECHA
 
 for i in {1..6}
 do
-    gnome-terminal --geometry="${SIZE}${POS[$i]}" --title="BERTO_$i" -- bash -c "{ 
+    gnome-terminal --geometry="${SIZE}${POS[$i]}" --title="CHAT_$i" -- bash -c "{ 
         echo 'PASS pass'; 
         sleep 0.5; 
-        echo 'NICK BERTO_$i'; 
+        echo 'NICK CHAT_$i'; 
         sleep 0.5; 
-        echo 'USER berto$i 0 * :Bot$i'; 
+        echo 'USER chat$i 0 * :Bot$i'; 
         sleep 0.5; 
         echo 'JOIN #42'; 
         cat; 
