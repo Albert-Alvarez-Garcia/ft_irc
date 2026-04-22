@@ -47,7 +47,7 @@ int main(int argc, char **argv)
 {
     // 1. Validate number of arguments
     if (argc != 3) {
-        std::cerr << "Uso: ./ircserv <port> <password>" << std::endl;
+        std::cerr << "Use: ./ircserv <port> <password>" << std::endl;
         return 1;
     }
 

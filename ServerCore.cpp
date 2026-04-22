@@ -4,7 +4,7 @@
 //--CONSTRUCTOR--
 
 Server::Server(int port, std::string password) : _port(port), _password(password), _serverSocket(-1) {
-    std::cout << "Servidor creado para el puerto " << _port << std::endl;
+    std::cout << "Server created in port " << _port << std::endl;
 }
 
 Server::~Server() 
